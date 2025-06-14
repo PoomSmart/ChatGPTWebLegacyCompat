@@ -1,0 +1,24 @@
+{
+  "name": "chatgptweblegacycompat",
+  "version": "1.0.0",
+  "description": "Transforms ChatGPT CSS to work on older OS versions",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PoomSmart/ChatGPTWebLegacyCompat.git"
+  },
+  "author": "PoomSmart",
+  "license": "ISC",
+  "scripts": {
+    "build": "node build.js",
+    "dev": "node build.js --watch"
+  },
+  "devDependencies": {
+    "@csstools/postcss-cascade-layers": "^5.0.1",
+    "autoprefixer": "^10.4.20",
+    "chokidar": "^4.0.1",
+    "cssnano": "^6.1.2",
+    "glob": "^11.0.0",
+    "postcss": "^8.4.49",
+    "postcss-cli": "^11.0.0"
+  }
+}
