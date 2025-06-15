@@ -16,7 +16,7 @@ css:
 
 # Clean CSS build outputs
 clean-css:
-	rm -f ChatGPTWebLegacyCompatCSS.h processed.css
+	rm -f ChatGPTWebLegacyCompatCSS.h processed-*.css
 
 # Build CSS before compiling the tweak
 before-all:: css

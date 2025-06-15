@@ -7,7 +7,7 @@ Makes the ChatGPT web app compatible with legacy browsers (mostly iOS 15.0 - 15.
 1. Copy all stylesheets from the ChatGPT web app.
 2. Manually remove incompatible syntaxes such as:
     - `::backdrop`
-    - (Not yet) `@container`
+    - `@container`
     - `@layer`
 3. Manually change all dynamic viewport units from `{d,s,l}v{w,h}` to `v{w,h}`
 4. Manually format the stylesheets

@@ -37,7 +37,13 @@ static NSString *injectScript(WKWebView *webview, NSString *script) {
 
 static void inject(WKWebView *webview) {
     if (![webview.URL.host containsString:@"chatgpt.com"]) return;
-    injectScript(webview, injectStyles(@"chatgpt-legacy-compat", kChatGPTWebLegacyCompatCSS));
+    if (!IS_IOS_OR_NEWER(iOS_16_0)) {
+        if (!IS_IOS_OR_NEWER(iOS_15_4)) {
+            injectScript(webview, injectStyles(@"chatgpt-legacy-compat-1", kChatGPTWebLegacyCompatRoot1CSS));
+            injectScript(webview, injectStyles(@"chatgpt-legacy-compat-3", kChatGPTWebLegacyCompatConversationSmallCSS));
+        }
+        injectScript(webview, injectStyles(@"chatgpt-legacy-compat-2", kChatGPTWebLegacyCompatRoot2CSS));
+    }
 }
 
 %hook WKWebView
