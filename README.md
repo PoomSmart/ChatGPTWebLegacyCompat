@@ -1,6 +1,6 @@
 # ChatGPTWebLegacyCompat
 
-Makes the ChatGPT web app compatible with legacy browsers (mostly iOS 15.0 - 15.4 for now).
+Makes the ChatGPT web app compatible with legacy browsers (mostly iOS 15, for now).
 
 ## The Big Ideas
 
