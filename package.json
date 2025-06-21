@@ -13,10 +13,16 @@
     "dev": "node build.js --watch"
   },
   "devDependencies": {
-    "@csstools/postcss-cascade-layers": "^5.0.1",
+    "@babel/cli": "^7.27.2",
+    "@babel/core": "^7.27.4",
+    "@babel/plugin-transform-class-properties": "^7.27.1",
+    "@babel/plugin-transform-modules-commonjs": "^7.27.1",
+    "@babel/plugin-transform-nullish-coalescing-operator": "^7.27.1",
+    "@babel/plugin-transform-private-methods": "^7.27.1",
+    "@babel/plugin-transform-private-property-in-object": "^7.27.1",
+    "@babel/plugin-transform-template-literals": "^7.27.1",
     "autoprefixer": "^10.4.20",
     "chokidar": "^4.0.1",
-    "cssnano": "^6.1.2",
     "glob": "^11.0.0",
     "postcss": "^8.4.49",
     "postcss-cli": "^11.0.0"

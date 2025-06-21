@@ -6,6 +6,6 @@ Description: Makes ChatGPT website functional on iOS 15.
 Maintainer: PoomSmart
 Author: PoomSmart
 Section: Tweaks
-Depends: mobilesubstrate (>= 0.9.5000), com.ps.polyfills (>= 1.8.1), firmware (>= 15.0), firmware (<< 16.0)
+Depends: mobilesubstrate (>= 0.9.5000), com.ps.polyfills (>= 1.12.0), firmware (>= 14.0), firmware (<< 16.0)
 Depiction: https://poomsmart.github.io/repo/depictions/chatgptweblegacycompat.html
 SileoDepiction: https://poomsmart.github.io/repo/sileodepictions/chatgptweblegacycompat.json

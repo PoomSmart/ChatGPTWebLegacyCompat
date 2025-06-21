@@ -8,6 +8,7 @@ yarn-error.log*
 ChatGPTWebLegacyCompatCSS.h
 processed-*.css
 debug-*.css
+*.scripts*.js
 
 # macOS
 .DS_Store
