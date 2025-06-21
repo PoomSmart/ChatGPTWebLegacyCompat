@@ -55,10 +55,11 @@ static void inject(WKWebView *webview) {
     if (![webview.URL.host containsString:@"chatgpt.com"]) return;
     if (!IS_IOS_OR_NEWER(iOS_16_0)) {
         if (!IS_IOS_OR_NEWER(iOS_15_4)) {
-            injectScript(webview, @"chatgpt-legacy-css-2", injectStyles(@"chatgpt-legacy-compat-1", kChatGPTWebLegacyCompatRoot1CSS));
+            injectScript(webview, @"chatgpt-legacy-css-1", injectStyles(@"chatgpt-legacy-compat-1", kChatGPTWebLegacyCompatRootBaseCSS));
+            injectScript(webview, @"chatgpt-legacy-css-2", injectStyles(@"chatgpt-legacy-compat-2", kChatGPTWebLegacyCompatRootComplexSupportsCSS));
             injectScript(webview, @"chatgpt-legacy-css-3", injectStyles(@"chatgpt-legacy-compat-3", kChatGPTWebLegacyCompatConversationSmallCSS));
-        }
-        injectScript(webview, @"chatgpt-legacy-css-1", injectStyles(@"chatgpt-legacy-compat-2", kChatGPTWebLegacyCompatRoot2CSS));
+        } else
+            injectScript(webview, @"chatgpt-legacy-css-4", injectStyles(@"chatgpt-legacy-compat-4", kChatGPTWebLegacyCompatRootContainerCSS));
         if (!IS_IOS_OR_NEWER(iOS_15_0)) {
             [webview.configuration.preferences setValue:@YES forKey:@"allowFileAccessFromFileURLs"];
             @try {
