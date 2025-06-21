@@ -13,10 +13,10 @@ async function processCSS() {
     const cssFiles = glob.sync('styles/**/*.css');
     console.log(`📁 Found ${cssFiles.length} CSS files:`, cssFiles);
 
-    let combinedCSS = '';
+    const processedCSSFiles = [];
 
     // Process each CSS file
-    for (const file of cssFiles) {
+    for (const file of cssFiles.sort()) {
       console.log(`⚙️  Processing ${file}...`);
 
       let cssContent = await fs.readFile(file, 'utf8');
@@ -45,8 +45,14 @@ async function processCSS() {
         // Apply minification
         let minifiedCSS = minifyCSS(result.css);
 
-        // Add a comment to identify the source file
-        combinedCSS += `${minifiedCSS}\n\n`;
+        // Store processed file info
+        const fileName = path.basename(file, '.css');
+        processedCSSFiles.push({
+          originalPath: file,
+          fileName: fileName,
+          variableName: generateVariableName(fileName),
+          content: minifiedCSS
+        });
 
         console.log(`✅ Processed ${file} successfully with PostCSS`);
 
@@ -56,21 +62,20 @@ async function processCSS() {
       }
     }
 
-    // Remove the last newlines
-    combinedCSS = combinedCSS.trim();
-
-    console.log(`📏 Combined CSS size: ${combinedCSS.length} characters`);
+    console.log(`📏 Processed ${processedCSSFiles.length} CSS files`);
 
     // Generate Objective-C header
-    const headerContent = generateObjCHeader(combinedCSS);
+    const headerContent = generateObjCHeader(processedCSSFiles);
 
     // Write the header file
     await fs.writeFile('ChatGPTWebLegacyCompatCSS.h', headerContent);
     console.log('✅ Generated ChatGPTWebLegacyCompatCSS.h');
 
-    // Also write the processed CSS for reference
-    await fs.writeFile('processed.css', combinedCSS);
-    console.log('✅ Generated processed.css');
+    // Also write each processed CSS file for reference
+    for (const fileInfo of processedCSSFiles) {
+      await fs.writeFile(`processed-${fileInfo.fileName}.css`, fileInfo.content);
+      console.log(`✅ Generated processed-${fileInfo.fileName}.css`);
+    }
 
     console.log('🎉 Build completed successfully!');
 
@@ -99,33 +104,19 @@ function minifyCSS(css) {
     .trim();
 }
 
-function generateObjCHeader(cssContent) {
-  // Escape the CSS content for Objective-C string
-  const escapedCSS = cssContent
-    .replace(/\\/g, '\\\\')  // Escape backslashes (this will handle CSS escape sequences like \32)
-    .replace(/"/g, '\\"')    // Escape quotes
-    .replace(/\n/g, '\\n')   // Escape newlines
-    .replace(/\r/g, '\\r');   // Escape carriage returns
+function generateVariableName(fileName) {
+  // Convert filename to a valid Objective-C variable name
+  // e.g., "conversation-small" -> "kChatGPTWebLegacyCompatConversationSmallCSS"
+  const camelCase = fileName
+    .split(/[-_]/)
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join('');
 
-  // Split into chunks of reasonable length to avoid compiler limits
-  const maxLineLength = 500;
-  const lines = [];
-  let currentLine = '';
+  return `kChatGPTWebLegacyCompat${camelCase}CSS`;
+}
 
-  for (let i = 0; i < escapedCSS.length; i++) {
-    currentLine += escapedCSS[i];
-    if (currentLine.length >= maxLineLength && (escapedCSS[i] === ' ' || escapedCSS[i] === '}')) {
-      lines.push(currentLine);
-      currentLine = '';
-    }
-  }
-  if (currentLine) {
-    lines.push(currentLine);
-  }
-
-  const stringLiterals = lines.map(line => `    @"${line}"`).join(' \\\n');
-
-  return `//
+function generateObjCHeader(cssFiles) {
+  let headerContent = `//
 //  ChatGPTWebLegacyCompatCSS.h
 //  ChatGPTWebLegacyCompat
 //
@@ -139,13 +130,49 @@ function generateObjCHeader(cssContent) {
 #import <Foundation/Foundation.h>
 
 // Processed and minified CSS for ChatGPT web legacy compatibility
-// This CSS has been transformed to be compatible with older WebKit versions
-// and includes fallbacks for modern CSS features like cascade layers
-static NSString *const kChatGPTWebLegacyCompatCSS = \\
+// These CSS files have been transformed to be compatible with older WebKit versions
+// and include fallbacks for modern CSS features like cascade layers
+
+`;
+
+  // Generate NSString variables for each CSS file
+  for (const fileInfo of cssFiles) {
+    // Escape the CSS content for Objective-C string
+    const escapedCSS = fileInfo.content
+      .replace(/\\/g, '\\\\')  // Escape backslashes (this will handle CSS escape sequences like \32)
+      .replace(/"/g, '\\"')    // Escape quotes
+      .replace(/\n/g, '\\n')   // Escape newlines
+      .replace(/\r/g, '\\r');   // Escape carriage returns
+
+    // Split into chunks of reasonable length to avoid compiler limits
+    const maxLineLength = 500;
+    const lines = [];
+    let currentLine = '';
+
+    for (let i = 0; i < escapedCSS.length; i++) {
+      currentLine += escapedCSS[i];
+      if (currentLine.length >= maxLineLength && (escapedCSS[i] === ' ' || escapedCSS[i] === '}')) {
+        lines.push(currentLine);
+        currentLine = '';
+      }
+    }
+    if (currentLine) {
+      lines.push(currentLine);
+    }
+
+    const stringLiterals = lines.map(line => `    @"${line}"`).join(' \\\n');
+
+    headerContent += `// CSS from ${fileInfo.originalPath}
+static NSString *const ${fileInfo.variableName} = \\
 ${stringLiterals};
 
-#endif /* ChatGPTWebLegacyCompatCSS_h */
 `;
+  }
+
+  headerContent += `#endif /* ChatGPTWebLegacyCompatCSS_h */
+`;
+
+  return headerContent;
 }
 
 function stripProblematicRules(cssContent) {

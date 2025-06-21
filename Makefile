@@ -34,7 +34,7 @@ js:
 
 # Clean CSS build outputs
 clean-css:
-	rm -f ChatGPTWebLegacyCompatCSS.h processed.css
+	rm -f ChatGPTWebLegacyCompatCSS.h processed-*.css
 
 # Clean JS build outputs
 clean-js:
