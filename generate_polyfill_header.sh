@@ -107,7 +107,7 @@ process_js_bundle_to_header_var() {
 INSPECTION_JS_SAVE_PATH_PREFIX="$SCRIPT_ABS_DIR/$HEADER_FILE" # Base name for .h.js files
 
 # Process JS files directly in SCRIPTS_SOURCE_DIR (base polyfill, non-recursive)
-echo "// Base polyfill scripts (for all versions or as fallback)" >> "$OUTPUT_H_FILE"
+echo "// Base polyfill scripts (for all versions)" >> "$OUTPUT_H_FILE"
 process_js_bundle_to_header_var "$SCRIPTS_SOURCE_DIR" "$VARIABLE_NAME" "$OUTPUT_H_FILE" "-maxdepth 1" "$INSPECTION_JS_SAVE_PATH_PREFIX"
 
 # Process version-specific JS files from subdirectories

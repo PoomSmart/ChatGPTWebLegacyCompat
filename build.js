@@ -1,13 +1,9 @@
 const fs = require('fs').promises;
 const path = require('path');
 const postcss = require('postcss');
-// const cascadeLayers = require('@csstools/postcss-cascade-layers');
 const glob = require('glob');
 
-// Simplified PostCSS processor focusing on cascade layers
-const processor = postcss([
-//   cascadeLayers()
-]);
+const processor = postcss();
 
 async function processCSS() {
   try {
