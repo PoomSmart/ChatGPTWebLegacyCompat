@@ -16,32 +16,21 @@ $(TWEAK_NAME)_CFLAGS = -fobjc-arc -Wno-trigraphs
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 
-JS_PATH = layout/Library/Application Support/ChatGPTWebLegacyCompat
+ASSETS_PATH = layout/Library/Application Support/$(TWEAK_NAME)
 
-# CSS build target
-css:
-	npm run build
-
-# JS build target
 js:
 	@for file in scripts/*.js; do \
 		base=$$(basename "$$file" .js); \
-		npx babel "$$file" --out-file "$(JS_PATH)/$$base.babel.js"; \
-		npx uglifyjs "$(JS_PATH)/$$base.babel.js" -o "$(JS_PATH)/$$base.min.js"; \
-		rm "$(JS_PATH)/$$base.babel.js"; \
+		npx babel "$$file" --out-file "$(ASSETS_PATH)/$$base.babel.js"; \
+		npx uglifyjs "$(ASSETS_PATH)/$$base.babel.js" -o "$(ASSETS_PATH)/$$base.min.js"; \
+		rm "$(ASSETS_PATH)/$$base.babel.js"; \
 	done
 	node fix-unicode.js
 
-# Clean CSS build outputs
-clean-css:
-	rm -f ChatGPTWebLegacyCompatCSS.h processed-*.css
+css:
+	@for file in styles/*.css; do \
+		base=$$(basename "$$file" .css); \
+		npx cleancss "$$file" -o "$(ASSETS_PATH)/$$base.min.css"; \
+	done
 
-# Clean JS build outputs
-clean-js:
-	rm -f Polyfills*.h
-
-# Build CSS before compiling the tweak
-before-all:: css js
-
-# Clean CSS files when cleaning
-clean:: clean-css clean-js
+assets: js css

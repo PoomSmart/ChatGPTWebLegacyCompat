@@ -169,12 +169,12 @@
         padding-top: var(--header-height)
     }
 
-    .\@\[84rem\]\/thread\:shadow-none\  ! {
+    .\@\[84rem\]\/thread\:shadow-none {
         --tw-shadow: 0 0 #0000 !important;
         box-shadow: var(--tw-inset-shadow),var(--tw-inset-ring-shadow),var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow) !important
     }
 
-    .\@\[84rem\]\/thread\:\[box-shadow\:var\(--sharp-edge-top-shadow\)\]\  ! {
+    .\@\[84rem\]\/thread\:\[box-shadow\:var\(--sharp-edge-top-shadow\)\] {
         box-shadow: var(--sharp-edge-top-shadow) !important
     }
 }

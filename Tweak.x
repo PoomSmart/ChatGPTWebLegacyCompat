@@ -6,35 +6,18 @@
 #import <WebKit/WKWebView.h>
 #import <WebKit/WKWebViewConfiguration.h>
 #import <version.h>
-#import "ChatGPTWebLegacyCompatCSS.h"
 
-static NSString *injectStyles(NSString *id, NSString *styles) {
-    // Escape the CSS for JavaScript string literal (double quotes)
+static NSString *injectStyles(NSString *identifier, NSString *styles) {
     NSString *escapedStyles = [styles stringByReplacingOccurrencesOfString:@"\\" withString:@"\\\\"];
     escapedStyles = [escapedStyles stringByReplacingOccurrencesOfString:@"\"" withString:@"\\\""];
-    escapedStyles = [escapedStyles stringByReplacingOccurrencesOfString:@"\n" withString:@"\\n"];
-    escapedStyles = [escapedStyles stringByReplacingOccurrencesOfString:@"\r" withString:@"\\r"];
-
-    return [NSString stringWithFormat:@"(function(){if(document.getElementById('%@')===null){const styleSheet=document.createElement('style');styleSheet.type='text/css';styleSheet.textContent=\"%@\";styleSheet.id='%@';document.head.appendChild(styleSheet);}})()", id, escapedStyles, id];
+    return [NSString stringWithFormat:@"(function(){if(document.getElementById('%@')===null){const styleSheet=document.createElement('style');styleSheet.type='text/css';styleSheet.innerText=`%@`;styleSheet.id='no-polyfill-%@';document.head.appendChild(styleSheet);}})();", identifier, escapedStyles, identifier];
 }
 
-static NSString *injectScript(WKWebView *webview, NSString *identifier, NSString *script) {
-    __block NSString *resultString = nil;
-    __block BOOL finished = NO;
-
+static void injectScript(WKWebView *webview, NSString *identifier, NSString *script) {
     [webview evaluateJavaScript:script completionHandler:^(id result, NSError *error) {
-        if (error == nil) {
-            if (result)
-                resultString = [NSString stringWithFormat:@"%@", result];
-        } else
-            HBLogDebug(@"ChatGPTWebLegacyCompat evaluateJavaScript (%@) error : %@", identifier, error.description);
-        finished = YES;
+        if (error)
+            HBLogInfo(@"ChatGPTWebLegacyCompat evaluateJavaScript (%@) error : %@", identifier, error.description);
     }];
-
-    while (!finished)
-        [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate distantFuture]];
-
-    return resultString;
 }
 
 static NSString *escapedScripts(NSString *input) {
@@ -54,23 +37,32 @@ static NSString *asScriptTag(NSString *scripts) {
 static void inject(WKWebView *webview) {
     if (![webview.URL.host containsString:@"chatgpt.com"]) return;
     if (!IS_IOS_OR_NEWER(iOS_16_0)) {
-        if (!IS_IOS_OR_NEWER(iOS_15_4)) {
-            injectScript(webview, @"chatgpt-legacy-css-1", injectStyles(@"chatgpt-legacy-compat-1", kChatGPTWebLegacyCompatRootBaseCSS));
-            injectScript(webview, @"chatgpt-legacy-css-2", injectStyles(@"chatgpt-legacy-compat-2", kChatGPTWebLegacyCompatRootComplexSupportsCSS));
-            injectScript(webview, @"chatgpt-legacy-css-3", injectStyles(@"chatgpt-legacy-compat-3", kChatGPTWebLegacyCompatConversationSmallCSS));
-        } else
-            injectScript(webview, @"chatgpt-legacy-css-4", injectStyles(@"chatgpt-legacy-compat-4", kChatGPTWebLegacyCompatRootContainerCSS));
+        NSArray *ios15_4_cssFiles = @[@"root-base.min", @"root-complex-supports.min", @"conversation-small.min"];
+        NSString *assetsFolder = PS_ROOT_PATH_NS(@"/Library/Application Support/ChatGPTWebLegacyCompat");
+        NSArray *assets = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:assetsFolder error:nil];
+        NSPredicate *cssPredicate = [NSPredicate predicateWithFormat:@"self ENDSWITH '.css'"];
+        NSArray *cssFiles = [assets filteredArrayUsingPredicate:cssPredicate];
+        for (NSString *cssFile in cssFiles) {
+            NSString *filePath = [assetsFolder stringByAppendingPathComponent:cssFile];
+            NSString *fileName = [cssFile stringByDeletingPathExtension];
+            if (IS_IOS_OR_NEWER(iOS_15_4) && [ios15_4_cssFiles containsObject:fileName]) continue;
+            if (!IS_IOS_OR_NEWER(iOS_15_4) && [fileName isEqualToString:@"root-container.min"]) continue;
+            NSString *cssContent = [NSString stringWithContentsOfFile:filePath encoding:NSUTF8StringEncoding error:nil];
+            if (cssContent) {
+                NSString *cssIdentifier = [fileName stringByReplacingOccurrencesOfString:@"-" withString:@"_"];
+                injectScript(webview, cssIdentifier, injectStyles(cssIdentifier, cssContent));
+            } else
+                HBLogDebug(@"ChatGPTWebLegacyCompat failed to read CSS file %@", cssFile);
+        }
         if (!IS_IOS_OR_NEWER(iOS_15_0)) {
             [webview.configuration.preferences setValue:@YES forKey:@"allowFileAccessFromFileURLs"];
             @try {
                 [webview.configuration.preferences setValue:@YES forKey:@"allowUniversalAccessFromFileURLs"];
             } @catch (id ex) {}
-            NSString *scriptsFolder = ROOT_PATH_NS(@"/Library/Application Support/ChatGPTWebLegacyCompat");
-            NSArray *scripts = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:scriptsFolder error:nil];
-            NSPredicate *predicate = [NSPredicate predicateWithFormat:@"self ENDSWITH '.js'"];
-            NSArray *jsFiles = [scripts filteredArrayUsingPredicate:predicate];
+            NSPredicate *jsPredicate = [NSPredicate predicateWithFormat:@"self ENDSWITH '.js'"];
+            NSArray *jsFiles = [assets filteredArrayUsingPredicate:jsPredicate];
             for (NSString *jsFile in jsFiles) {
-                NSString *filePath = [scriptsFolder stringByAppendingPathComponent:jsFile];
+                NSString *filePath = [assetsFolder stringByAppendingPathComponent:jsFile];
                 NSString *fileName = [jsFile stringByDeletingPathExtension];
                 NSString *scriptContent = [NSString stringWithContentsOfFile:filePath encoding:NSUTF8StringEncoding error:nil];
                 if ([jsFile hasSuffix:@"-module.min.js"]) {
