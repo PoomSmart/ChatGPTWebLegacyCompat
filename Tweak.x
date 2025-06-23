@@ -5,25 +5,23 @@
 #import <WebKit/WKPreferences.h>
 #import <WebKit/WKWebView.h>
 #import <WebKit/WKWebViewConfiguration.h>
+#import <WebKit/WKUserContentController.h>
+#import <WebKit/WKUserScript.h>
 #import <version.h>
-
-static NSString *injectStyles(NSString *identifier, NSString *styles) {
-    NSString *escapedStyles = [styles stringByReplacingOccurrencesOfString:@"\\" withString:@"\\\\"];
-    escapedStyles = [escapedStyles stringByReplacingOccurrencesOfString:@"\"" withString:@"\\\""];
-    return [NSString stringWithFormat:@"(function(){if(document.getElementById('%@')===null){const styleSheet=document.createElement('style');styleSheet.type='text/css';styleSheet.innerText=`%@`;styleSheet.id='no-polyfill-%@';document.head.appendChild(styleSheet);}})();", identifier, escapedStyles, identifier];
-}
-
-static void injectScript(WKWebView *webview, NSString *identifier, NSString *script) {
-    [webview evaluateJavaScript:script completionHandler:^(id result, NSError *error) {
-        if (error)
-            HBLogInfo(@"ChatGPTWebLegacyCompat evaluateJavaScript (%@) error : %@", identifier, error.description);
-    }];
-}
 
 static NSString *escapedScripts(NSString *input) {
     NSString *escaped = [input stringByReplacingOccurrencesOfString:@"\\" withString:@"\\\\"];
     escaped = [escaped stringByReplacingOccurrencesOfString:@"\"" withString:@"\\\""];
     return escaped;
+}
+
+static NSString *injectStyles(NSString *identifier, NSString *styles) {
+    return [NSString stringWithFormat:@"(function(){if(document.getElementById('%@')===null){const styleSheet=document.createElement('style');styleSheet.type='text/css';styleSheet.innerText=`%@`;styleSheet.id='no-polyfill-%@';document.head.appendChild(styleSheet);}})();", identifier, escapedScripts(styles), identifier];
+}
+
+static void injectScript(WKWebView *webview, NSString *identifier, NSString *script) {
+    WKUserScript *userScript = [[WKUserScript alloc] initWithSource:script injectionTime:WKUserScriptInjectionTimeAtDocumentEnd forMainFrameOnly:YES];
+    [webview.configuration.userContentController addUserScript:userScript];
 }
 
 static NSString *asScriptTag(NSString *scripts) {
@@ -34,8 +32,16 @@ static NSString *asScriptTag(NSString *scripts) {
             "if(document.body){addScript();}else{document.addEventListener('DOMContentLoaded',addScript);}})()", escapedScripts(scripts)];
 }
 
+static const void *GPTInjectedKey = &GPTInjectedKey;
+
 static void inject(WKWebView *webview) {
     if (![webview.URL.host containsString:@"chatgpt.com"]) return;
+    WKUserContentController *controller = webview.configuration.userContentController;
+    if (!controller) {
+        controller = [[WKUserContentController alloc] init];
+        webview.configuration.userContentController = controller;
+    } else if (objc_getAssociatedObject(controller, GPTInjectedKey)) return;
+    objc_setAssociatedObject(controller, GPTInjectedKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     if (!IS_IOS_OR_NEWER(iOS_16_0)) {
         NSArray *ios15_4_cssFiles = @[@"root-base.min", @"root-complex-supports.min", @"conversation-small.min"];
         NSString *assetsFolder = PS_ROOT_PATH_NS(@"/Library/Application Support/ChatGPTWebLegacyCompat");
