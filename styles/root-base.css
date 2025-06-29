@@ -3632,7 +3632,7 @@ select {
 }
 
 .hidden {
-    display: none
+    display: none !important
 }
 
 .inline {
@@ -12741,14 +12741,6 @@ select {
     --sheet-radius: 24px
 }
 
-.\[--thread-content-margin\:--spacing\(4\)\] {
-    --thread-content-margin: calc(var(--spacing)*4)
-}
-
-.\[--thread-content-max-width\:32rem\] {
-    --thread-content-max-width: 32rem
-}
-
 .\[anchor-name\:--carousel\] {
     anchor-name: --carousel
 }
@@ -19193,4 +19185,12 @@ tr[data-disabled=true] .\[tr\[data-disabled\=true\]_\&\]\:opacity-50 {
 
 .\@\[84rem\]\/thread\:pt-\(--header-height\) {
     padding-top: var(--header-height)
+}
+
+.\[--thread-content-margin\:--spacing\(4\)\] {
+    --thread-content-margin: calc(var(--spacing)*4)
+}
+
+.\[--thread-content-max-width\:32rem\] {
+    --thread-content-max-width: 32rem
 }
