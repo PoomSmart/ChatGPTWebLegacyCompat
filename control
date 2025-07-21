@@ -1,6 +1,6 @@
 Package: com.ps.chatgptweblegacycompat
 Name: ChatGPTWebLegacyCompat
-Version: 1.3.3
+Version: 1.3.4
 Architecture: iphoneos-arm
 Description: Makes ChatGPT website functional on iOS 15.
 Maintainer: PoomSmart

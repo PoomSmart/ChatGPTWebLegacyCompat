@@ -19037,6 +19037,62 @@ tr[data-disabled=true] .\[tr\[data-disabled\=true\]_\&\]\:opacity-50 {
     z-index: -1
 }
 
+.composer-submit-btn {
+    align-items: center;
+    background-color: #000;
+    border-radius: 3.40282e+38px;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    transition-duration: var(--tw-duration, var(--default-transition-duration));
+    transition-property: color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to;
+    transition-timing-function: var(--tw-ease, var(--default-transition-timing-function))
+}
+
+@media (hover: hover) {
+    .composer-submit-btn:hover {
+        opacity: .7
+    }
+}
+
+.composer-submit-btn:disabled {
+    color: #f4f4f4
+}
+
+@media (hover: hover) {
+    .composer-submit-btn:disabled:hover {
+        opacity: 1
+    }
+}
+
+.composer-submit-btn:is(.dark *):focus-visible {
+    outline-color: #fff
+}
+
+.composer-submit-btn:is(.dark *):disabled {
+    background-color: var(--text-quaternary);
+    color: var(--main-surface-secondary)
+}
+
+.composer-submit-btn:disabled {
+    background-color: #d7d7d7
+}
+
+.composer-submit-btn:is(.dark *) {
+    background-color: #fff;
+    color: #000
+}
+
+.composer-submit-btn[data-in-menu]:disabled {
+    background-color: #00000014;
+    color: var(--text-tertiary);
+    transition-property: none
+}
+
+.composer-submit-btn[data-in-menu]:is(.dark *):disabled {
+    background-color: #ffffff29
+}
+
 .overflow-auto>*,
 .overflow-scroll>*,
 .overflow-x-auto>*,
