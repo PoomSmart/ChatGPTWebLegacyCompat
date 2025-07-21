@@ -7255,6 +7255,10 @@ select {
     border-radius: 16px
 }
 
+.rounded-\[18px\] {
+    border-radius: 18px
+}
+
 .rounded-\[20px\] {
     border-radius: 20px
 }
@@ -9441,7 +9445,7 @@ select {
 }
 
 .bg-token-main-surface-primary {
-    background-color: var(--main-surface-primary)
+    background-color: var(--main-surface-primary) !important
 }
 
 .bg-token-main-surface-primary-inverse {
@@ -11267,6 +11271,10 @@ select {
 
 .whitespace-pre {
     white-space: pre
+}
+
+.whitespace-pre\! {
+    white-space: pre !important
 }
 
 .whitespace-pre-line {
@@ -19120,7 +19128,7 @@ tr[data-disabled=true] .\[tr\[data-disabled\=true\]_\&\]\:opacity-50 {
 }
 
 .\@\[34rem\]\:\[--thread-content-max-width\:40rem\] {
-    --thread-content-max-width: 40rem
+    --thread-content-max-width: clamp(288px, 100%, 768px)
 }
 
 .\@\[37rem\]\:\[--thread-content-margin\:--spacing\(6\)\] {
@@ -19156,7 +19164,7 @@ tr[data-disabled=true] .\[tr\[data-disabled\=true\]_\&\]\:opacity-50 {
 }
 
 .\@\[64rem\]\:\[--thread-content-max-width\:48rem\] {
-    --thread-content-max-width: 48rem
+    --thread-content-max-width: clamp(288px, 100%, 768px)
 }
 
 .\@\[72rem\]\:\[--thread-content-margin\:--spacing\(16\)\] {
@@ -19192,5 +19200,5 @@ tr[data-disabled=true] .\[tr\[data-disabled\=true\]_\&\]\:opacity-50 {
 }
 
 .\[--thread-content-max-width\:32rem\] {
-    --thread-content-max-width: 32rem
+    --thread-content-max-width: clamp(288px, 100%, 768px)
 }
