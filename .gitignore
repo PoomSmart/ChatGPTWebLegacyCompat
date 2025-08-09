@@ -12,4 +12,5 @@ yarn-error.log*
 packages/
 obj/
 
+/*.css
 *.disabled

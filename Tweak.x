@@ -12,6 +12,7 @@
 static NSString *escapedScripts(NSString *input) {
     NSString *escaped = [input stringByReplacingOccurrencesOfString:@"\\" withString:@"\\\\"];
     escaped = [escaped stringByReplacingOccurrencesOfString:@"\"" withString:@"\\\""];
+    escaped = [escaped stringByReplacingOccurrencesOfString:@"`" withString:@"\\`"];
     return escaped;
 }
 
@@ -43,7 +44,7 @@ static void inject(WKWebView *webview) {
     } else if (objc_getAssociatedObject(controller, GPTInjectedKey)) return;
     objc_setAssociatedObject(controller, GPTInjectedKey, @YES, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     if (!IS_IOS_OR_NEWER(iOS_16_0)) {
-        NSArray *ios15_4_cssFiles = @[@"root-base.min", @"root-complex-supports.min", @"conversation-small.min"];
+        NSArray *ios15_4_cssFiles = @[@"root-base.min", @"root-base-overrides.min", @"conversation-small.min"];
         NSString *assetsFolder = PS_ROOT_PATH_NS(@"/Library/Application Support/ChatGPTWebLegacyCompat");
         NSArray *assets = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:assetsFolder error:nil];
         NSPredicate *cssPredicate = [NSPredicate predicateWithFormat:@"self ENDSWITH '.css'"];

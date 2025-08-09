@@ -13,8 +13,8 @@
     "dev": "node build.js --watch"
   },
   "devDependencies": {
-    "@babel/cli": "^7.27.2",
-    "@babel/core": "^7.27.4",
+    "@babel/cli": "^7.28.0",
+    "@babel/core": "^7.28.0",
     "@babel/plugin-transform-class-properties": "^7.27.1",
     "@babel/plugin-transform-modules-commonjs": "^7.27.1",
     "@babel/plugin-transform-nullish-coalescing-operator": "^7.27.1",
