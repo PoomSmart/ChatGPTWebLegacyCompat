@@ -30,7 +30,9 @@ js:
 css:
 	@for file in styles/*.css; do \
 		base=$$(basename "$$file" .css); \
-		npx cleancss "$$file" -o "$(ASSETS_PATH)/$$base.min.css"; \
+		npx postcss "$$file" --no-map -o "$(ASSETS_PATH)/$$base.post.css"; \
+		npx cleancss "$(ASSETS_PATH)/$$base.post.css" -o "$(ASSETS_PATH)/$$base.min.css"; \
+		rm "$(ASSETS_PATH)/$$base.post.css"; \
 	done
 
 assets: js css
