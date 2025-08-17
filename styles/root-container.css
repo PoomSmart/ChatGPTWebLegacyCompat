@@ -48,6 +48,19 @@
             display:flex
         }
     }
+    @container (min-width: 28rem) {
+        .\@md\:col-span-8 {
+            grid-column:span 8/span 8
+        }
+
+        .\@md\:col-start-3 {
+            grid-column-start:3
+        }
+
+        .\@md\:px-0 {
+            padding-inline:calc(var(--spacing) * 0)
+        }
+    }
     @container thread (min-width: 32rem) {
         .\@lg\/thread\:block {
             display:block

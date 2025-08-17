@@ -17,7 +17,7 @@ static NSString *escapedScripts(NSString *input) {
 }
 
 static NSString *injectStyles(NSString *identifier, NSString *styles) {
-    return [NSString stringWithFormat:@"(function(){if(document.getElementById('%@')===null){const styleSheet=document.createElement('style');styleSheet.type='text/css';styleSheet.innerText=`%@`;styleSheet.id='no-polyfill-%@';document.head.appendChild(styleSheet);}})();", identifier, escapedScripts(styles), identifier];
+    return [NSString stringWithFormat:@"(function(){if(document.getElementById('no-polyfill-%@')===null){const styleSheet=document.createElement('style');styleSheet.type='text/css';styleSheet.innerText=`%@`;styleSheet.id='no-polyfill-%@';document.head.appendChild(styleSheet);}})();", identifier, escapedScripts(styles), identifier];
 }
 
 static void injectScript(WKWebView *webview, NSString *identifier, NSString *script) {

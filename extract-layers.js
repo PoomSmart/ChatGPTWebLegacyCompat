@@ -2,7 +2,7 @@
 /**
  * Extract only the content inside top-level @layer blocks, remove the @layer wrappers,
  * drop ::backdrop selectors from selector lists (but keep the rest), and output valid CSS.
- * Any top-level styles not inside @layer are discarded (per requirement #4).
+ * Any top-level styles not inside @layer are discarded.
  *
  * Usage: node extract-layers.js input.css output.css
  */
@@ -110,8 +110,12 @@ function processContainer(container) {
         for (const decl of node.nodes) {
           if (decl.type === 'decl' && typeof decl.value === 'string') {
             // Safe replacement: only whole unit tokens, not inside custom property names since we are in value
-            decl.value = decl.value.replace(/(?<=\d)([dsl])v([wh])\b/g, 'v$2'); // number followed by unit
-            decl.value = decl.value.replace(/\b([dsl])v([wh])\b/g, 'v$2'); // fallback for non-numeric (e.g., calc(var(--foo)*1dvh))
+            // Convert dynamic viewport units (dvh/svh/lvh) to classic (vh/vw)
+            // 1) Common case: a number (with optional sign/decimal) immediately precedes the unit, e.g., -100lvh, .5dvw, 2svh
+            decl.value = decl.value.replace(/([+-]?(?:\d+\.?\d*|\.\d+))\s*([dsl])v([wh])\b/gi, '$1v$3');
+            // 2) Rare case: bare unit token preceded by a non-word char (e.g., in functions or after operators), e.g., "min(100, 1dvh)"
+            //    Avoid matching inside identifiers by requiring a non-word prefix and reinserting it.
+            decl.value = decl.value.replace(/(^|[^0-9A-Za-z_-])([dsl])v([wh])\b/gi, (m, pre, _dyn, hw) => pre + 'v' + hw);
             // Normalize spaced scientific notation: 1e + 10 -> 1e+10, 2.5e - 8 -> 2.5e-8
             decl.value = decl.value.replace(/(\d(?:[\d]*\.?[\d]*)e)\s*([+-])\s*(\d+)/gi, '$1$2$3');
           }
