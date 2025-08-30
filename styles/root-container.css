@@ -142,8 +142,8 @@
             inset-inline-end:calc(var(--spacing) * 0)
         }
 
-        .\@\[84rem\]\/thread\:top-2 {
-            top:calc(var(--spacing) * 2)
+        .\@\[84rem\]\/thread\:-top-\[var\(--header-height\)\] {
+            top:calc(var(--header-height) * -1)
         }
 
         .\@\[84rem\]\/thread\:bg-token-main-surface-primary {

@@ -109,15 +109,28 @@ function processContainer(container) {
         // Replace dynamic viewport units in declaration values only (leave class names/selectors untouched)
         for (const decl of node.nodes) {
           if (decl.type === 'decl' && typeof decl.value === 'string') {
-            // Safe replacement: only whole unit tokens, not inside custom property names since we are in value
-            // Convert dynamic viewport units (dvh/svh/lvh) to classic (vh/vw)
-            // 1) Common case: a number (with optional sign/decimal) immediately precedes the unit, e.g., -100lvh, .5dvw, 2svh
-            decl.value = decl.value.replace(/([+-]?(?:\d+\.?\d*|\.\d+))\s*([dsl])v([wh])\b/gi, '$1v$3');
-            // 2) Rare case: bare unit token preceded by a non-word char (e.g., in functions or after operators), e.g., "min(100, 1dvh)"
-            //    Avoid matching inside identifiers by requiring a non-word prefix and reinserting it.
-            decl.value = decl.value.replace(/(^|[^0-9A-Za-z_-])([dsl])v([wh])\b/gi, (m, pre, _dyn, hw) => pre + 'v' + hw);
-            // Normalize spaced scientific notation: 1e + 10 -> 1e+10, 2.5e - 8 -> 2.5e-8
-            decl.value = decl.value.replace(/(\d(?:[\d]*\.?[\d]*)e)\s*([+-])\s*(\d+)/gi, '$1$2$3');
+            // Convert dynamic viewport units (dvh/svh/lvh/dvw/svw/lvw) to classic (vh/vw)
+            // and mark the declaration as !important if any conversion occurred.
+            let v = decl.value;
+            let changed = false;
+
+            // 1) Common case: a number (with optional sign/decimal) immediately precedes the unit
+            let next = v.replace(/([+-]?(?:\d+\.?\d*|\.\d+))\s*([dsl])v([wh])\b/gi, '$1v$3');
+            changed = changed || next !== v; v = next;
+            // 2) Rare case: bare unit token preceded by a non-word char (e.g., in functions or after operators)
+            next = v.replace(/(^|[^0-9A-Za-z_-])([dsl])v([wh])\b/gi, (m, pre, _dyn, hw) => pre + 'v' + hw);
+            changed = changed || next !== v; v = next;
+
+            // Normalize spaced scientific notation in numbers inside values
+            v = v.replace(/(\d(?:[\d]*\.?[\d]*)e)\s*([+-])\s*(\d+)/gi, '$1$2$3');
+
+            // Assign back and enforce !important when units were converted (but don't double-add)
+            if (v !== decl.value) {
+              decl.value = v;
+            }
+            if (changed && !decl.important) {
+              decl.important = true;
+            }
           }
         }
         if (node.nodes.length === 0) node.remove();
