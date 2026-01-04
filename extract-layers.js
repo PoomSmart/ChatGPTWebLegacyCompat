@@ -51,12 +51,110 @@ function filterBackdrop(selectorList) {
   return kept.join(', ');
 }
 
+/**
+ * Transpile @container range syntax to legacy @media syntax.
+ * @param {string} params 
+ * @returns {string}
+ */
+function transpileContainerQuery(params) {
+  // Fix the weird space in range syntax: "> =" -> ">="
+  let p = params.replace(/\s*([<>])\s*=\s*/g, '$1=')
+                .replace(/\s*>\s*/g, '>')
+                .replace(/\s*<\s*/g, '<');
+
+  // Strip container name (everything before the first '(')
+  const parenIndex = p.indexOf('(');
+  if (parenIndex !== -1) {
+    const preParen = p.substring(0, parenIndex);
+    const hasNot = /\bnot\b/i.test(preParen);
+    p = (hasNot ? 'not ' : '') + p.substring(parenIndex);
+  }
+  p = p.trim();
+
+  // Convert (width >= 400px) -> (min-width: 400px)
+  p = p.replace(/\(width\s*>=\s*([^)]+)\)/gi, '(min-width: $1)');
+  // Convert (width <= 400px) -> (max-width: 400px)
+  p = p.replace(/\(width\s*<=\s*([^)]+)\)/gi, '(max-width: $1)');
+  
+  // Handle 'not' for media queries: "not (min-width: 400px)" -> "not all and (min-width: 400px)"
+  if (/^not\s+\(/i.test(p)) {
+    p = 'not all and ' + p.substring(4);
+  }
+
+  return p;
+}
+
+/**
+ * Convert physical properties to logical ones within a rule.
+ * @param {import('postcss').Rule} rule 
+ * @param {'ltr'|'rtl'} direction 
+ */
+function transformLogicalProperties(rule, direction) {
+  rule.walkDecls(decl => {
+    const prop = decl.prop;
+    if (direction === 'ltr') {
+      decl.prop = prop
+        .replace(/^left$/, 'inset-inline-start')
+        .replace(/^right$/, 'inset-inline-end')
+        .replace(/^margin-left$/, 'margin-inline-start')
+        .replace(/^margin-right$/, 'margin-inline-end')
+        .replace(/^padding-left$/, 'padding-inline-start')
+        .replace(/^padding-right$/, 'padding-inline-end')
+        .replace(/^border-left$/, 'border-inline-start')
+        .replace(/^border-right$/, 'border-inline-end')
+        .replace(/^border-left-([a-z-]+)$/, 'border-inline-start-$1')
+        .replace(/^border-right-([a-z-]+)$/, 'border-inline-end-$1')
+        .replace(/^border-top-left-radius$/, 'border-start-start-radius')
+        .replace(/^border-top-right-radius$/, 'border-end-start-radius')
+        .replace(/^border-bottom-left-radius$/, 'border-start-end-radius')
+        .replace(/^border-bottom-right-radius$/, 'border-end-end-radius');
+    } else if (direction === 'rtl') {
+      decl.prop = prop
+        .replace(/^left$/, 'inset-inline-end')
+        .replace(/^right$/, 'inset-inline-start')
+        .replace(/^margin-left$/, 'margin-inline-end')
+        .replace(/^margin-right$/, 'margin-inline-start')
+        .replace(/^padding-left$/, 'padding-inline-end')
+        .replace(/^padding-right$/, 'padding-inline-start')
+        .replace(/^border-left$/, 'border-inline-end')
+        .replace(/^border-right$/, 'border-inline-start')
+        .replace(/^border-left-([a-z-]+)$/, 'border-inline-end-$1')
+        .replace(/^border-right-([a-z-]+)$/, 'border-inline-start-$1')
+        .replace(/^border-top-left-radius$/, 'border-end-start-radius')
+        .replace(/^border-top-right-radius$/, 'border-start-start-radius')
+        .replace(/^border-bottom-left-radius$/, 'border-end-end-radius')
+        .replace(/^border-bottom-right-radius$/, 'border-start-end-radius');
+    }
+  });
+}
+
 function processContainer(container) {
   if (!container || !container.nodes) return;
   // Copy to avoid skipping nodes when removing
   for (const node of [...container.nodes]) {
     if (node.type === 'rule') {
-  let original = node.selector;
+      let original = node.selector;
+
+      // Convert :dir(ltr/rtl) to logical properties for iOS < 16.4
+      if (/:dir\((ltr|rtl)\)/.test(original)) {
+        // Collect all directions present in the selector
+        const directions = [];
+        original.replace(/:dir\((ltr|rtl)\)/g, (m, dir) => {
+          if (!directions.includes(dir)) directions.push(dir);
+          return '';
+        });
+        // Transform declarations for each direction found
+        directions.forEach(dir => transformLogicalProperties(node, dir));
+        // Strip the pseudo-class from the selector and clean up internal/external commas
+        original = original.replace(/:dir\((ltr|rtl)\)/g, '')
+          .replace(/(:where|:is|:not)\(\s*,/g, '$1(')
+          .replace(/,\s*,/g, ',')
+          .replace(/,\s*\)/g, ')');
+        
+        // Clean up any double commas at the top level (if any part became empty)
+        original = splitSelectors(original).filter(s => s.trim().length > 0).join(', ');
+      }
+
   // Normalize attribute selector spacing for ~= (e.g., [data-silk ~ =a1] -> [data-silk~=a1])
   original = original.replace(/(\[[^\]]*?)\s*~\s*=(?=[^\]]*\])/g, (m, pre) => pre + '~=');
       // Normalize escaped important markers: transform "\\ !" to "\\!"
@@ -107,6 +205,7 @@ function processContainer(container) {
             return true;
         });
         // Replace dynamic viewport units in declaration values only (leave class names/selectors untouched)
+
         for (const decl of node.nodes) {
           if (decl.type === 'decl' && typeof decl.value === 'string') {
             // Convert dynamic viewport units (dvh/svh/lvh/dvw/svw/lvw) to classic (vh/vw)
@@ -117,12 +216,29 @@ function processContainer(container) {
             // 1) Common case: a number (with optional sign/decimal) immediately precedes the unit
             let next = v.replace(/([+-]?(?:\d+\.?\d*|\.\d+))\s*([dsl])v([wh])\b/gi, '$1v$3');
             changed = changed || next !== v; v = next;
-            // 2) Rare case: bare unit token preceded by a non-word char (e.g., in functions or after operators)
-            next = v.replace(/(^|[^0-9A-Za-z_-])([dsl])v([wh])\b/gi, (m, pre, _dyn, hw) => pre + 'v' + hw);
-            changed = changed || next !== v; v = next;
 
-            // Normalize spaced scientific notation in numbers inside values
+            // Normalize scientific notation
             v = v.replace(/(\d(?:[\d]*\.?[\d]*)e)\s*([+-])\s*(\d+)/gi, '$1$2$3');
+
+            // Fix corrupted font-family line for Segoe UI Variable Small
+            if (v.includes('Segoe UI Variable')) {
+              // Handle multiple potential corruption patterns
+              v = v.replace(/"?Segoe UI Variable\s+ui-sans-serif"ns-serif"?/g, '"Segoe UI Variable Small", "ui-sans-serif"');
+              v = v.replace(/Segoe UI Variable ui-sans-serif"ns-serif"/g, '"Segoe UI Variable Small", "ui-sans-serif"');
+              changed = true;
+            }
+
+            // Fix url(";https://...) errors
+            if (v.includes('url(";https://')) {
+              v = v.replace(/url\(";https:\/\//g, 'url("https://');
+              changed = true;
+            }
+
+            // Fix mask-composite: source-in (invalid in standard CSS, usually followed by intersect)
+            if (decl.prop === 'mask-composite' && v === 'source-in') {
+               v = 'intersect';
+               changed = true;
+            }
 
             // Assign back and enforce !important when units were converted (but don't double-add)
             if (v !== decl.value) {
@@ -131,25 +247,74 @@ function processContainer(container) {
             if (changed && !decl.important) {
               decl.important = true;
             }
+            
+            // Final cleanup of values: remove any accidental trailing semicolon and unwanted leading semicolon from misparsing
+            if (typeof decl.value === 'string') {
+              let cleaned = decl.value.trim();
+              if (cleaned.startsWith(';')) cleaned = cleaned.substring(1).trim();
+              if (cleaned.endsWith(';')) cleaned = cleaned.slice(0, -1).trim();
+              decl.value = cleaned;
+            }
           }
         }
+
+        // Deduplicate and filter declarations
+        const decls = new Map();
+        for (const decl of [...node.nodes]) {
+          if (decl.type === 'decl') {
+            // Drop declarations with empty or whitespace-only values
+            if (!decl.value || decl.value.trim().length === 0) {
+              decl.remove();
+              continue;
+            }
+            const key = `${decl.prop}${decl.important ? '!important' : ''}`;
+            if (decls.has(key)) {
+              decls.get(key).remove();
+            }
+            decls.set(key, decl);
+          }
+        }
+
         if (node.nodes.length === 0) node.remove();
       }
     } else if (node.type === 'atrule') {
       if (node.name === 'layer') {
-        // We should never have nested @layer (but if we do, inline its children)
         const parent = node.parent;
-        const idx = parent.index(node);
         node.each(child => parent.insertBefore(node, child));
         node.remove();
         continue;
       }
+      
+      // Fix @supports spacing: and(not -> and (not
+      if (node.name === 'supports') {
+        node.params = node.params
+          .replace(/\s*and\s*\(/gi, ' and (')
+          .replace(/\s*or\s*\(/gi, ' or (')
+          .replace(/\s*not\s*\(/gi, ' not (');
+      }
+
       processContainer(node);
+      if (['starting-style', 'font-palette-values'].includes(node.name) || (node.name === 'media' && node.params.includes('print'))) {
+        node.remove();
+        continue;
+      }
       if (!node.nodes || node.nodes.length === 0) {
-        // Keep at-rules like @font-face (they have decls) or at-rules without blocks
         if (node.raws && node.raws.afterName === undefined && node.nodes === undefined) continue;
-        if (node.name === 'font-face') continue; // font-face always has decls
+        if (node.name === 'font-face') continue;
         if (node.nodes && node.nodes.length === 0) node.remove();
+      }
+    }
+  }
+  
+  // Deduplicate identical adjacent rules or rules with same content within the same container
+  const seenRules = new Map();
+  for (const node of [...container.nodes]) {
+    if (node.type === 'rule') {
+      const ruleKey = node.selector + ' {' + node.nodes.map(n => n.toString()).join(';') + '}';
+      if (seenRules.has(ruleKey)) {
+        node.remove();
+      } else {
+        seenRules.set(ruleKey, true);
       }
     }
   }
@@ -164,7 +329,6 @@ try {
   process.exit(1);
 }
 
-// Collect content from top-level @layer at-rules only.
 const newRoot = postcss.root();
 const layersEncountered = [];
 for (const node of root.nodes) {
@@ -178,15 +342,23 @@ for (const node of root.nodes) {
 // Process the new root: remove ::backdrop selectors, clean empty stuff.
 processContainer(newRoot);
 
-// Extract all @container at-rules into a separate root
+// Extract all @container at-rules into a separate root, converting them to @media for compatibility.
 const containersRoot = postcss.root();
 newRoot.walkAtRules('container', atRule => {
+  atRule.params = transpileContainerQuery(atRule.params);
+  atRule.name = 'media';
+  // Also process contents of container rules as they might need logical property conversion etc.
+  processContainer(atRule);
   containersRoot.append(atRule.clone());
   atRule.remove();
 });
 
 // Final validation parse step
-let outputCSS = newRoot.toString();
+let outputCSS = newRoot.toString()
+  .replace(/;;/g, ';') // General cleanup for double semicolons
+  .split('ui-sans-serif"ns-serif"').join('Small", "ui-sans-serif"')
+  .replace(/Variable\s+ui-sans-serif"ns-serif"/g, 'Variable Small", "ui-sans-serif"')
+  .replace(/url\(";https:\/\//g, 'url("https://'); // Specific fix for misquoted URLs
 
 try {
   postcss.parse(outputCSS, { from: undefined });

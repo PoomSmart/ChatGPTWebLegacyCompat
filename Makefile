@@ -27,7 +27,11 @@ js:
 	done
 	node fix-unicode.js
 
-css:
+lint-css:
+	@echo "Linting CSS..."
+	@npx stylelint "styles/*.css" --fix || true
+
+css: lint-css
 	@for file in styles/*.css; do \
 		base=$$(basename "$$file" .css); \
 		npx postcss "$$file" --no-map -o "$(ASSETS_PATH)/$$base.post.css"; \

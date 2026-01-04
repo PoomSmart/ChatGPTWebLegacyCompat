@@ -1,0 +1,83 @@
+{
+    "extends": "stylelint-config-standard",
+    "rules": {
+        "selector-class-pattern": null,
+        "custom-property-pattern": null,
+        "selector-pseudo-class-no-unknown": [
+            true,
+            {
+                "ignorePseudoClasses": [
+                    "dir",
+                    "container"
+                ]
+            }
+        ],
+        "property-no-unknown": [
+            true,
+            {
+                "ignoreProperties": [
+                    "container",
+                    "container-name",
+                    "container-type",
+                    "inset-inline-start",
+                    "inset-inline-end",
+                    "margin-inline-start",
+                    "margin-inline-end",
+                    "padding-inline-start",
+                    "padding-inline-end",
+                    "border-inline-start",
+                    "border-inline-end",
+                    "border-start-start-radius",
+                    "border-start-end-radius",
+                    "border-end-start-radius",
+                    "border-end-end-radius",
+                    "text-fill-color",
+                    "-webkit-text-fill-color",
+                    "corner-shape",
+                    "corner-top-left-shape",
+                    "corner-top-right-shape",
+                    "corner-bottom-left-shape",
+                    "corner-bottom-right-shape"
+                ]
+            }
+        ],
+        "at-rule-no-unknown": [
+            true,
+            {
+                "ignoreAtRules": [
+                    "layer",
+                    "container",
+                    "mixin",
+                    "define-mixin"
+                ]
+            }
+        ],
+        "media-feature-name-no-unknown": [
+            true,
+            {
+                "ignoreMediaFeatureNames": [
+                    "min-device-pixel-ratio",
+                    "min--moz-device-pixel-ratio"
+                ]
+            }
+        ],
+        "no-descending-specificity": null,
+        "value-keyword-case": null,
+        "declaration-empty-line-before": null,
+        "comment-empty-line-before": null,
+        "block-no-empty": null,
+        "no-duplicate-selectors": null,
+        "keyframe-block-no-duplicate-selectors": null,
+        "declaration-block-no-duplicate-properties": null,
+        "font-family-no-duplicate-names": null,
+        "number-max-precision": null,
+        "selector-type-no-unknown": null,
+        "at-rule-prelude-no-invalid": null,
+        "property-no-deprecated": null,
+        "declaration-block-no-shorthand-property-overrides": null,
+        "named-grid-areas-no-invalid": null,
+        "declaration-property-value-no-unknown": null,
+        "font-family-no-missing-generic-family-keyword": null,
+        "font-family-name-quotes": null
+    }
+}
