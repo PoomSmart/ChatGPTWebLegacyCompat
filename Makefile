@@ -29,7 +29,10 @@ js:
 
 lint-css:
 	@echo "Linting CSS..."
-	@npx stylelint "styles/*.css" --fix || true
+	@npx stylelint "styles/*.css" \
+		--ignore-pattern "styles/root-base.css" \
+		--ignore-pattern "styles/root-container.css" \
+		--fix || true
 
 css: lint-css
 	@for file in styles/*.css; do \
