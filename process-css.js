@@ -4,7 +4,7 @@
  * drop ::backdrop selectors from selector lists (but keep the rest), and output valid CSS.
  * Any top-level styles not inside @layer are discarded.
  *
- * Usage: node extract-layers.js input.css output.css
+ * Usage: node process-css.js input.css output.css
  */
 const fs = require('fs');
 const path = require('path');
@@ -186,6 +186,12 @@ function processContainer(container) {
           return '.not-last\\:after\\:' + cleaned + '>*:not(:last-child):after';
         }
       );
+  // Fix spaces after colon before pseudo-class functions: "select: not(" -> "select:not("
+  original = original.replace(/:\s+(not|where|is|has|nth-child|nth-last-child|nth-of-type|nth-last-of-type|first-child|last-child|only-child|any)\s*\(/gi, ':$1(');
+  // Fix malformed URL Tailwind class selectors: \(\https -> \(https (spurious backslash before protocol)
+  original = original.replace(/\\\(\\(https?)/gi, '\\($1');
+  // Fix double-escaped closing paren in URL arbitrary-value class selectors: \\) -> \)
+  original = original.replace(/\\\\\)/g, '\\)');
   const filtered = filterBackdrop(original);
       if (!filtered) {
         node.remove();
@@ -253,6 +259,8 @@ function processContainer(container) {
               let cleaned = decl.value.trim();
               if (cleaned.startsWith(';')) cleaned = cleaned.substring(1).trim();
               if (cleaned.endsWith(';')) cleaned = cleaned.slice(0, -1).trim();
+              // Fix trailing colon in values: "#c1c0c0:" -> "#c1c0c0"
+              if (cleaned.endsWith(':')) cleaned = cleaned.slice(0, -1).trim();
               decl.value = cleaned;
             }
           }

@@ -5,7 +5,7 @@ Makes the ChatGPT web app compatible with legacy browsers (mostly iOS 15, for no
 ## The Big Ideas
 
 1. Download `root.css` from ChatGPT web app
-2. Run `node extract-layers.js root.css styles/root-base.css`
+2. Run `node process-css.js root.css styles/root-base.css`
 3. Run `make assets`
 4. Run `make`
 
